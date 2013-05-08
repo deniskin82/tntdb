@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2012 Tommi Maekitalo
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,41 +26,40 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef TNTDB_IMPL_POOLCONNECTION_H
-#define TNTDB_IMPL_POOLCONNECTION_H
+#ifndef TNTDB_ORACLE_MULTIROW_H
+#define TNTDB_ORACLE_MULTIROW_H
 
-#include <tntdb/connectionpool.h>
-#include <tntdb/iface/iconnection.h>
+#include <tntdb/oracle/statement.h>
+#include <tntdb/oracle/multivalue.h>
+#include <vector>
 
 namespace tntdb
 {
-  class PoolConnection : public IConnection
+  namespace oracle
   {
-      ConnectionPool::PoolObjectType connection;
-      bool inTransaction;
-      bool drop;
+    class MultiRow : public cxxtools::RefCounted
+    {
+        typedef std::vector<cxxtools::SmartPtr<MultiValue> > Columns;
+        typedef std::vector<tntdb::Value> Values;
+        Columns _columns;
+        Values _values;
 
-    public:
-      PoolConnection(ConnectionPool::PoolObjectType connection);
-      ~PoolConnection();
+      public:
+        typedef cxxtools::SmartPtr<MultiRow> Ptr;
 
-      virtual void beginTransaction();
-      virtual void commitTransaction();
-      virtual void rollbackTransaction();
+        MultiRow(Statement* stmt, unsigned rowcount);
+        MultiRow(Statement* stmt, unsigned rowcount, unsigned columncount);
 
-      virtual size_type execute(const std::string& query);
-      virtual Result select(const std::string& query);
-      virtual Row selectRow(const std::string& query);
-      virtual Value selectValue(const std::string& query);
-      virtual Statement prepare(const std::string& query);
-      virtual Statement prepareCached(const std::string& query, const std::string& key);
-      virtual void clearStatementCache();
-      virtual bool clearStatementCache(const std::string& key);
-      virtual bool ping();
-      virtual long lastInsertId(const std::string& name);
-      virtual void lockTable(const std::string& tablename, bool exclusive);
-  };
+        unsigned size() const
+        { return _columns.size(); }
+
+        MultiValue::Ptr getValuesByNumber(unsigned field_num) const;
+        MultiValue::Ptr getValuesByName(const std::string& field_name) const;
+        Columns::size_type getColIndexByName(const std::string& field_name) const;
+        std::string getColumnName(unsigned field_num) const;
+    };
+  }
 }
 
-#endif // TNTDB_IMPL_POOLCONNECTION_H
+#endif // TNTDB_ORACLE_MULTIROW_H
 

@@ -124,6 +124,7 @@ namespace tntdb
       sword ret;
 
       /* get parameter-info */
+      log_debug("OCIParamGet(" << static_cast<void*>(stmt->getHandle()) << ')');
       ret = OCIParamGet(stmt->getHandle(), OCI_HTYPE_STMT,
         stmt->getErrorHandle(),
         reinterpret_cast<void**>(&paramp), pos + 1);

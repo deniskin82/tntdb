@@ -14,4 +14,4 @@ SUBDIRS = \
 
 EXTRA_DIST = \
     COPYING \
-    m4/acx_pthread.m4
+    Releasenotes-1.3.markdown

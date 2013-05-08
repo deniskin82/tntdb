@@ -39,6 +39,7 @@ namespace tntdb
   namespace oracle
   {
     class Statement;
+    class SingleRow;
 
     class Cursor : public ICursor
     {
@@ -46,8 +47,12 @@ namespace tntdb
         OCIStmt* stmtp;
         tntdb::Row row;
 
+        unsigned fetchsize;
+        SingleRow* srow;
+        ub4 rowcount;
+
       public:
-        Cursor(Statement* stmt, unsigned fetchSize);
+        Cursor(Statement* stmt, unsigned fetchsize);
         ~Cursor();
 
         // method for ICursor

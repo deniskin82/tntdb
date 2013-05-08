@@ -41,6 +41,7 @@ log_define("tntdb.unit.types")
 #define BEGIN_TEST(T, col)                           \
       const std::string colName = col;               \
       bool isNotNull = false;                        \
+      tntdb::Statement::const_iterator cursor;       \
       tntdb::Statement ins = conn.prepare(           \
         "insert into tntdbtest(" col  ") values(:" col ")"); \
       tntdb::Statement sel = conn.prepare(           \
@@ -54,6 +55,15 @@ log_define("tntdb.unit.types")
       dbvalue = sel.selectValue();                   \
       isNotNull = dbvalue.get(res);                  \
       CXXTOOLS_UNIT_ASSERT(isNotNull);               \
+      CXXTOOLS_UNIT_ASSERT_EQUALS(val, res);         \
+      dbvalue = sel.select()[0][0];                  \
+      isNotNull = dbvalue.get(res);                  \
+      CXXTOOLS_UNIT_ASSERT(isNotNull);               \
+      CXXTOOLS_UNIT_ASSERT_EQUALS(val, res);         \
+      cursor = sel.begin(4);                         \
+      CXXTOOLS_UNIT_ASSERT(cursor != sel.end());     \
+      isNotNull = (*cursor)[0].get(res);             \
+      CXXTOOLS_UNIT_ASSERT(isNotNull);               \
       CXXTOOLS_UNIT_ASSERT_EQUALS(val, res);
 
 #define TESTEQ(val)                                  \
@@ -61,6 +71,15 @@ log_define("tntdb.unit.types")
       ins.set(colName, val).execute();               \
       dbvalue = sel.selectValue();                   \
       isNotNull = dbvalue.get(res);                  \
+      CXXTOOLS_UNIT_ASSERT(isNotNull);               \
+      CXXTOOLS_UNIT_ASSERT(val == res);              \
+      dbvalue = sel.select()[0][0];                  \
+      isNotNull = dbvalue.get(res);                  \
+      CXXTOOLS_UNIT_ASSERT(isNotNull);               \
+      CXXTOOLS_UNIT_ASSERT(val == res);              \
+      cursor = sel.begin(4);                         \
+      CXXTOOLS_UNIT_ASSERT(cursor != sel.end());     \
+      isNotNull = (*cursor)[0].get(res);             \
       CXXTOOLS_UNIT_ASSERT(isNotNull);               \
       CXXTOOLS_UNIT_ASSERT(val == res);
 
@@ -70,7 +89,16 @@ log_define("tntdb.unit.types")
       dbvalue = sel.selectValue();                   \
       isNotNull = dbvalue.get(res);                  \
       CXXTOOLS_UNIT_ASSERT(isNotNull);               \
-      CXXTOOLS_UNIT_ASSERT(val / res >= .9999 && val / res <= 1.0001);
+      CXXTOOLS_UNIT_ASSERT(val / res >= .9999 && val / res <= 1.0001); \
+      dbvalue = sel.select()[0][0];                  \
+      isNotNull = dbvalue.get(res);                  \
+      CXXTOOLS_UNIT_ASSERT(isNotNull);               \
+      CXXTOOLS_UNIT_ASSERT(val / res >= .9999 && val / res <= 1.0001); \
+      cursor = sel.begin(4);                         \
+      CXXTOOLS_UNIT_ASSERT(cursor != sel.end());     \
+      isNotNull = (*cursor)[0].get(res);             \
+      CXXTOOLS_UNIT_ASSERT(isNotNull);               \
+      CXXTOOLS_UNIT_ASSERT(val == res);
 
 #define TESTDT(val)                                  \
       del.execute();                                 \
@@ -84,6 +112,15 @@ log_define("tntdb.unit.types")
       }                                              \
       else                                           \
         CXXTOOLS_UNIT_ASSERT(val.isNull());          \
+      dbvalue = sel.select()[0][0];                   \
+      isNotNull = dbvalue.get(res);                  \
+      if (isNotNull)                                 \
+      {                                              \
+        CXXTOOLS_UNIT_ASSERT(!res.isNull());         \
+        CXXTOOLS_UNIT_ASSERT_EQUALS(val.getIso(), res.getIso()); \
+      }                                              \
+      else                                           \
+        CXXTOOLS_UNIT_ASSERT(val.isNull());
 
 class TntdbTypesTest : public cxxtools::unit::TestSuite
 {
@@ -375,16 +412,16 @@ class TntdbTypesTest : public cxxtools::unit::TestSuite
          .set("doublecol", doubleval)
          .execute();
 
-      int intres;
-      long longres;
-      unsigned ures;
-      unsigned long ulongres;
-      int32_t int32res;
-      uint32_t uint32res;
-      int64_t int64res;
-      uint64_t uint64res;
-      float floatres;
-      double doubleres;
+      int intres = 0;
+      long longres = 0;
+      unsigned ures = 0;
+      unsigned long ulongres = 0;
+      int32_t int32res = 0;
+      uint32_t uint32res = 0;
+      int64_t int64res = 0;
+      uint64_t uint64res = 0;
+      float floatres = 0;
+      double doubleres = 0;
 
       tntdb::Statement sel = conn.prepare(
         "select"
@@ -454,6 +491,7 @@ class TntdbTypesTest : public cxxtools::unit::TestSuite
       ins.set("floatcol", n).execute();
       dbvalue = sel.selectValue();
       isNotNull = dbvalue.get(res);
+      CXXTOOLS_UNIT_ASSERT(isNotNull);
       CXXTOOLS_UNIT_ASSERT(res != res);
     }
 
@@ -465,6 +503,7 @@ class TntdbTypesTest : public cxxtools::unit::TestSuite
       ins.set("doublecol", n).execute();
       dbvalue = sel.selectValue();
       isNotNull = dbvalue.get(res);
+      CXXTOOLS_UNIT_ASSERT(isNotNull);
       CXXTOOLS_UNIT_ASSERT(res != res);
     }
 

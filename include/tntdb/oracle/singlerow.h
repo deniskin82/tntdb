@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2012 Tommi Maekitalo
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,41 +26,37 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef TNTDB_IMPL_POOLCONNECTION_H
-#define TNTDB_IMPL_POOLCONNECTION_H
+#ifndef TNTDB_ORACLE_SINGLEROW_H
+#define TNTDB_ORACLE_SINGLEROW_H
 
-#include <tntdb/connectionpool.h>
-#include <tntdb/iface/iconnection.h>
+#include <tntdb/oracle/multirow.h>
+#include <tntdb/oracle/singlevalue.h>
+#include <tntdb/iface/irow.h>
 
 namespace tntdb
 {
-  class PoolConnection : public IConnection
+  namespace oracle
   {
-      ConnectionPool::PoolObjectType connection;
-      bool inTransaction;
-      bool drop;
+    class SingleRow : public IRow
+    {
+        MultiRow::Ptr _mr;
+        unsigned _row;
+        typedef std::vector<SingleValue::Ptr> Values;
+        Values _values;
 
-    public:
-      PoolConnection(ConnectionPool::PoolObjectType connection);
-      ~PoolConnection();
+      public:
+        SingleRow(MultiRow::Ptr mr, unsigned row);
 
-      virtual void beginTransaction();
-      virtual void commitTransaction();
-      virtual void rollbackTransaction();
+        unsigned row() const  { return _row; }
+        void row(unsigned r);
 
-      virtual size_type execute(const std::string& query);
-      virtual Result select(const std::string& query);
-      virtual Row selectRow(const std::string& query);
-      virtual Value selectValue(const std::string& query);
-      virtual Statement prepare(const std::string& query);
-      virtual Statement prepareCached(const std::string& query, const std::string& key);
-      virtual void clearStatementCache();
-      virtual bool clearStatementCache(const std::string& key);
-      virtual bool ping();
-      virtual long lastInsertId(const std::string& name);
-      virtual void lockTable(const std::string& tablename, bool exclusive);
-  };
+        virtual size_type size() const;
+        virtual tntdb::Value getValueByNumber(size_type field_num) const;
+        virtual tntdb::Value getValueByName(const std::string& field_name) const;
+        virtual std::string getColumnName(size_type field_num) const;
+    };
+  }
 }
 
-#endif // TNTDB_IMPL_POOLCONNECTION_H
+#endif // TNTDB_ORACLE_SINGLEROW_H
 

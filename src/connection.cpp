@@ -116,7 +116,7 @@ namespace tntdb
     else
     {
       log_debug("statement for query \"" << key << "\" fetched from cache");
-      return Statement(it->second);
+      return Statement(it->second.getPointer());
     }
   }
 
@@ -126,4 +126,18 @@ namespace tntdb
 
     stmtCache.clear();
   }
+
+  bool IStmtCacheConnection::clearStatementCache(const std::string& key)
+  {
+    log_trace("IStmtCacheConnection::clearStatementCache(\"" << key << "\")");
+
+    stmtCacheType::iterator it = stmtCache.find(key);
+    if (it != stmtCache.end())
+      return  false;
+
+    log_debug("remove statement for query \"" << key << "\" from cache");
+    stmtCache.erase(it);
+    return true;
+  }
+
 }

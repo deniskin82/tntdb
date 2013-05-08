@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006 Tommi Maekitalo
+ * Copyright (C) 2012 Tommi Maekitalo
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,41 +26,62 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef TNTDB_IMPL_POOLCONNECTION_H
-#define TNTDB_IMPL_POOLCONNECTION_H
+#include <tntdb/oracle/singlerow.h>
+#include <cxxtools/log.h>
 
-#include <tntdb/connectionpool.h>
-#include <tntdb/iface/iconnection.h>
+log_define("tntdb.oracle.singlerow")
 
 namespace tntdb
 {
-  class PoolConnection : public IConnection
+  namespace oracle
   {
-      ConnectionPool::PoolObjectType connection;
-      bool inTransaction;
-      bool drop;
+    SingleRow::SingleRow(MultiRow::Ptr mr, unsigned row)
+      : _mr(mr),
+        _row(row)
+    {
+        _values.resize(mr->size());
+    }
 
-    public:
-      PoolConnection(ConnectionPool::PoolObjectType connection);
-      ~PoolConnection();
+    void SingleRow::row(unsigned r)
+    {
+      if (r != _row)
+      {
+        for (unsigned n = 0; n < _values.size(); ++n)
+        {
+          if (_values[n])
+            _values[n]->row(r);
+        }
 
-      virtual void beginTransaction();
-      virtual void commitTransaction();
-      virtual void rollbackTransaction();
+        _row = r;
+      }
+    }
 
-      virtual size_type execute(const std::string& query);
-      virtual Result select(const std::string& query);
-      virtual Row selectRow(const std::string& query);
-      virtual Value selectValue(const std::string& query);
-      virtual Statement prepare(const std::string& query);
-      virtual Statement prepareCached(const std::string& query, const std::string& key);
-      virtual void clearStatementCache();
-      virtual bool clearStatementCache(const std::string& key);
-      virtual bool ping();
-      virtual long lastInsertId(const std::string& name);
-      virtual void lockTable(const std::string& tablename, bool exclusive);
-  };
+    SingleRow::size_type SingleRow::size() const
+    {
+      return _mr->size();
+    }
+
+    tntdb::Value SingleRow::getValueByNumber(size_type field_num) const
+    {
+      Values& v = const_cast<Values&>(_values);
+
+      if (!v[field_num])
+      {
+        v[field_num] = new SingleValue(_mr->getValuesByNumber(field_num), _row);
+      }
+
+      return tntdb::Value(v[field_num].getPointer());
+    }
+
+    tntdb::Value SingleRow::getValueByName(const std::string& field_name) const
+    {
+      return getValueByNumber(_mr->getColIndexByName(field_name));
+    }
+
+    std::string SingleRow::getColumnName(size_type field_num) const
+    {
+      return _mr->getColumnName(field_num);
+    }
+
+  }
 }
-
-#endif // TNTDB_IMPL_POOLCONNECTION_H
-
